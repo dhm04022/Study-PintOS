@@ -3,7 +3,7 @@
 * `docker pull <ImageName>` : 도커 이미지 다운
 * `docker run -it --name <name> <ImageID>` : 이미지를 사용하여 컨테이너 생성 (실행도 동시에 됨)
 * `docker start <Container ID or Name>` : 컨테이너 실행
-* `dcoker attach <Container ID or Name>` : 컨테이너 배쉬 접속 (tty 같이)
+* `docker attach <Container ID or Name>` : 컨테이너 배쉬 접속 (tty 같이)
 * 내부에서 `exit` : 종료
 * 내부에서 `ctrl + p + q` : 종료하지 않은 상태에서 연결만 종료
 * `docker images` : 현재 풀 받은 이미지 리스트
