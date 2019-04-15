@@ -237,7 +237,7 @@ thread_create (const char *name, int priority,
 void
 thread_block (void) 
 {
-  struct thread *cur = thread_currnent();
+  struct thread *cur = thread_current();
   enum intr_level old_level;
 
   ASSERT (!intr_context ());
