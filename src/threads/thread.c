@@ -80,6 +80,7 @@ static tid_t allocate_tid (void);
 
 /* === CUSTOM === */
 void check_wakeup_threads (void);
+void element_remove (struct list_elem *);
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -245,7 +246,7 @@ thread_block (void)
 
   old_level = intr_disable();
   if (cur != idle_thread) {
-    list_remove(&cur->elem);
+    element_remove(&cur->elem);
     list_push_back(&wait_list, &cur->elem);
   }
   cur->status = THREAD_BLOCKED;
@@ -270,7 +271,7 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_remove(&t->elem);
+  element_remove(&t->elem);
   list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
@@ -341,8 +342,9 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread) 
+  if (cur != idle_thread) {
     list_push_back (&ready_list, &cur->elem);
+  }
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -640,6 +642,15 @@ check_wakeup_threads (void)
           t->wakeup_tick = 0;
         }
     }
+}
+
+void
+element_remove (struct list_elem *e)
+{
+  e->prev->next = e->next;
+  e->next->prev = e->prev;
+  e->prev = NULL;
+  e->next = NULL;
 }
 
 
