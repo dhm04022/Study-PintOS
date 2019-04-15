@@ -92,9 +92,8 @@ timer_sleep (int64_t ticks)
   /* ==== CUSTOM ===== */
   /* For blocked mode */
   int64_t start = timer_ticks ();
-  thread_set_wakeup_tick(start + ticks);
-  thread_block();
-  
+  thread_sleep(ticks + start);
+
   /* ==== basic code ==== */
   /*
   int64_t start = timer_ticks ();

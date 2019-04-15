@@ -237,19 +237,11 @@ thread_create (const char *name, int priority,
 void
 thread_block (void) 
 {
-  struct thread *cur = thread_current();
-  enum intr_level old_level;
-
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
 
-  old_level = intr_disable();
-  if (cur != idle_thread) {
-    list_push_back(&wait_list, &cur->elem);
-  }
-  cur->status = THREAD_BLOCKED;
+  thread_current ()->status = THREAD_BLOCKED;
   schedule ();
-  intr_set_level (old_level);
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
@@ -269,7 +261,6 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_remove(&t->elem);
   list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
@@ -636,10 +627,27 @@ check_wakeup_threads (void)
       struct thread *t = list_entry (e, struct thread, elem);
       if (t->wakeup_tick >= timer_ticks())
         { // wake up
+          list_remove(&t->elem);
           thread_unblock(t);
           t->wakeup_tick = 0;
         }
     }
+}
+
+void
+thread_sleep(int limit_tick) {
+  enum intr_level old_level;
+  struct thread *t = thread_current ();
+
+  
+
+  thread_set_wakeup_tick(limit_tick);
+  thread_block();
+
+  old_level = intr_disable ();
+  list_remove(&t->elem);
+  list_push_back (&wait_list, &t->elem);
+  intr_set_level (old_level);
 }
 
 
