@@ -11,6 +11,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "devices/timer.h" // === CUSTOM ===
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -27,6 +28,12 @@ static struct list ready_list;
 /* List of all processes.  Processes are added to this list
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
+
+/* ===== CUSTOM ====== */
+/* List of all wait processes(threads).
+   All the processes was blocked using `time_block()` function */
+static struct list wait_list;
+
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -71,6 +78,9 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+/* === CUSTOM === */
+void check_wakeup_threads (void);
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -92,6 +102,8 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+  list_init (&wait_list); // ==== CUSTOM =====
+
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -133,6 +145,8 @@ thread_tick (void)
 #endif
   else
     kernel_ticks++;
+
+  check_wakeup_threads(); // === CUSTOM ===
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
@@ -182,6 +196,7 @@ thread_create (const char *name, int priority,
 
   /* Initialize thread. */
   init_thread (t, name, priority);
+  t->wakeup_tick = 0;               // === CUSTOM ===
   tid = t->tid = allocate_tid ();
 
   /* Prepare thread for first run by initializing its stack.
@@ -212,6 +227,7 @@ thread_create (const char *name, int priority,
   return tid;
 }
 
+/* === some thing CUSTOM === */
 /* Puts the current thread to sleep.  It will not be scheduled
    again until awoken by thread_unblock().
 
@@ -221,11 +237,20 @@ thread_create (const char *name, int priority,
 void
 thread_block (void) 
 {
+  struct thread *cur = thread_currnent();
+  enum intr_level old_level;
+
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
 
-  thread_current ()->status = THREAD_BLOCKED;
+  old_level = intr_disable();
+  if (cur != idle_thread) {
+    list_remove(&cur->elem);
+    list_push_back(&wait_list, &cur->elem);
+  }
+  cur->status = THREAD_BLOCKED;
   schedule ();
+  intr_set_level (old_level);
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
@@ -245,6 +270,7 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
+  list_remove(&t->elem);
   list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
@@ -384,6 +410,22 @@ thread_get_recent_cpu (void)
   return 0;
 }
 
+/* === CUSTOM === */
+/* Returns the current thread's wakeup_tick value. */
+int thread_get_wakeup_tick (void)
+{
+  return thread_current()->wakeup_tick;
+}
+
+/* === CUSTOM === */
+/* Sets the current thread's wakeup_tick value to the tick argument */
+void thread_set_wakeup_tick (int tick)
+{
+  struct thread *now_thread = thread_current();
+  now_thread->wakeup_tick = tick;
+}
+
+
 /* Idle thread.  Executes when no other thread is ready to run.
 
    The idle thread is initially put on the ready list by
@@ -582,6 +624,25 @@ allocate_tid (void)
   return tid;
 }
 
+/* === CUSTOM === */
+void 
+check_wakeup_threads (void)
+{
+  struct list_elem *e;
+
+  for (e = list_begin (&wait_list); e != list_end (&wait_list);
+       e = list_next (e))
+    {
+      struct thread *t = list_entry (e, struct thread, elem);
+      if (t->wakeup_tick >= timer_ticks())
+        { // wake up
+          thread_unblock(t);
+          t->wakeup_tick = 0;
+        }
+    }
+}
+
+
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
