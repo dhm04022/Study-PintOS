@@ -676,27 +676,28 @@ thread_sleep(int limit_tick)
 {
   struct thread *t;
   enum intr_level old_level;
-
+  printf("thread_sleep in:\n");
   old_level = intr_disable();
 
   t = thread_current();
-  if (t != idle_thread)
-  {
-    // block
-    thread_set_wakeup_tick(limit_tick); 
-    thread_block();
+  ASSERT(t != idle_thread);
 
-    // push in wait_list
-    list_remove(&t->elem);
-    list_push_back(&wait_list, &t->elem);
+  // push in wait_list
+  thread_set_wakeup_tick(limit_tick); 
+  list_push_back(&wait_list, &t->elem);
+  printf("push back done!\n");
 
-    // update min_wait_tick
-    if (limit_tick < min_wait_tick)
-      min_wait_tick = limit_tick;
-  }
+  // block
+  thread_block();
+  printf("push back done!\n");
 
-  debug_wait_list();
+  // update min_wait_tick
+  if (limit_tick < min_wait_tick)
+    min_wait_tick = limit_tick;
+
+  // debug_wait_list();
   intr_set_level(old_level);
+  printf("thread_sleep out: min_wait_tick: %d\n", min_wait_tick);
 }
 
 
