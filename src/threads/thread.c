@@ -644,7 +644,29 @@ check_wakeup_threads (void)
   old_level = intr_disable();
 
   e = list_begin(&wait_list);
+  while (e != list_end(&wait_list))
+  {
+    struct thread *t = list_entry(e, struct thread, elem);
+    if (t->wakeup_tick >= timer_ticks())
+    { // wake up
+      e = list_remove(&t->elem);
+      thread_unblock(t);
+      min_wait_tick = INT64_MAX;
+      continue;
+    }
+    
+    // find min
+    if (t->wakeup_tick < temp_min)
+      temp_min = t->wakeup_tick;
 
+    // next
+    e = list_next(e);
+  }
+
+  // update min_wait_tick
+  if (temp_min < min_wait_tick)
+    min_wait_tick = temp_min;
+    
   intr_set_level(old_level);
 }
 
