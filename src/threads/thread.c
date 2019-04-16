@@ -641,17 +641,17 @@ check_wakeup_threads (void)
 {
   struct list_elem *e;
   min_wait_tick = INT64_MAX;
-  printf("wakeup in: ");
+  // printf("wakeup in: ");
 
   e = list_begin(&wait_list);
   while (e != list_end(&wait_list))
   {
     struct thread *t = list_entry(e, struct thread, elem);
-    printf(" (%d, %d)", t->tid, t->wakeup_tick);
+    // printf(" (%d, %d)", t->tid, t->wakeup_tick);
 
     if (t->wakeup_tick <= timer_ticks())
     { // wake up
-      printf("killed!");
+      // printf("killed!");
       e = list_remove(&t->elem);
       thread_unblock(t);
       continue;
@@ -665,7 +665,7 @@ check_wakeup_threads (void)
     e = list_next(e);
   }
 
-  printf("\n");
+  //printf("\n");
   //debug_wait_list();
 }
 
