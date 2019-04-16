@@ -103,7 +103,7 @@ struct thread
 
 
     /* ==== CUSTOM ==== */
-    int wakeup_tick;                    /* Thread wake-up timeing when blocked. */
+    int64_t wakeup_tick;                    /* Thread wake-up timeing when blocked. */
   };
 
 /* If false (default), use round-robin scheduler.
