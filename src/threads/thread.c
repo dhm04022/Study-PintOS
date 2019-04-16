@@ -34,7 +34,7 @@ static struct list all_list;
 /* List of all wait processes(threads).
    All the processes was blocked using `time_block()` function */
 static struct list wait_list;
-
+int64_t min_wait_tick = INT64_MAX;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -148,7 +148,7 @@ thread_tick (void)
     kernel_ticks++;
 
   // === CUSTOM ===
-  if (!list_empty(&wait_list))
+  if (min_wait_tick >= timer_ticks())
     check_wakeup_threads(); 
 
   /* Enforce preemption. */
@@ -624,7 +624,7 @@ debug_wait_list (void)
 {
   struct list_elem *e;
 
-  printf("list (secs: %"PRId64"): ", timer_ticks());
+  printf("wait list (now secs: %"PRId64"): ", timer_ticks());
   for (e = list_begin (&wait_list); e != list_end (&wait_list);
        e = list_next (e))
     {
@@ -638,43 +638,39 @@ debug_wait_list (void)
 void 
 check_wakeup_threads (void)
 {
-  enum intr_level old_level;
   struct list_elem *e;
+  int64_t temp_min = INT64_MAX;
+  enum intr_level old_level;
+  old_level = intr_disable();
 
-  old_level = intr_disable ();
+  e = list_begin(&wait_list);
 
-  for (e = list_begin (&wait_list); e != list_end (&wait_list);
-       e = list_next (e))
-    {
-      struct thread *t = list_entry (e, struct thread, elem);
-      if (t->wakeup_tick >= timer_ticks())
-        { // wake up
-          printf("wakup tid %d: %"PRId64"\n", t->tid, t->wakeup_tick);
-          thread_unblock(t);
-          list_remove(&t->elem);
-          t->wakeup_tick = 0;
-        }
-    }
-
-    debug_wait_list();
-    intr_set_level (old_level);
+  intr_set_level(old_level);
 }
 
 void
-thread_sleep(int limit_tick) {
+thread_sleep(int limit_tick) 
+{
+  struct thread *t;
   enum intr_level old_level;
-  struct thread *t = thread_current ();
+  old_level = intr_disable();
 
-  old_level = intr_disable ();
-  ASSERT(t != idle_thread);
-  thread_set_wakeup_tick(limit_tick);
-  list_push_back (&wait_list, &t->elem);
+  // block
+  thread_set_wakeup_tick(limit_tick); 
   thread_block();
 
-  printf("sleep: tid %d: %"PRId64"\n", t->tid, t->wakeup_tick);
-  debug_wait_list ();
-  intr_set_level (old_level);
+  // push in wait_list
+  t = thread_current();
+  list_push_back(&wait_list, &t->elem);
+
+  // update min_wait_tick
+  if (limit_tick < min_wait_tick)
+    min_wait_tick = limit_tick;
+
+  debug_wait_list();
+  intr_set_level(old_level);
 }
+
 
 
 /* Offset of `stack' member within `struct thread'.

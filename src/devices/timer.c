@@ -92,7 +92,6 @@ timer_sleep (int64_t ticks)
   /* ==== CUSTOM ===== */
   /* For blocked mode */
   int64_t start = timer_ticks ();
-  printf("timer_sleep : %"PRId64" %"PRId64" %"PRId64"\n", start, ticks, start+ticks);
   ASSERT (intr_get_level () == INTR_ON);
   thread_sleep(ticks + start);
 
