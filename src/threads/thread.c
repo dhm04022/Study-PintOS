@@ -638,7 +638,10 @@ debug_wait_list (void)
 void 
 check_wakeup_threads (void)
 {
+  enum intr_level old_level;
   struct list_elem *e;
+
+  old_level = intr_disable ();
 
   for (e = list_begin (&wait_list); e != list_end (&wait_list);
        e = list_next (e))
@@ -654,6 +657,7 @@ check_wakeup_threads (void)
     }
 
     debug_wait_list();
+    intr_set_level (old_level);
 }
 
 void
@@ -667,10 +671,10 @@ thread_sleep(int limit_tick) {
   //list_remove(&t->elem);
   list_push_back (&wait_list, &t->elem);
   thread_block();
-  intr_set_level (old_level);
-  
+
   printf("sleep: tid %d:\n", t->tid);
   debug_wait_list ();
+  intr_set_level (old_level);
 }
 
 
