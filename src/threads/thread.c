@@ -148,7 +148,7 @@ thread_tick (void)
     kernel_ticks++;
 
   // === CUSTOM ===
-  if (min_wait_tick >= timer_ticks())
+  if (min_wait_tick <= timer_ticks())
     check_wakeup_threads(); 
 
   /* Enforce preemption. */
@@ -641,12 +641,16 @@ check_wakeup_threads (void)
   struct list_elem *e;
   int64_t temp_min = INT64_MAX;
   enum intr_level old_level;
+  printf("wakeup in: ");
+
   old_level = intr_disable();
 
   e = list_begin(&wait_list);
   while (e != list_end(&wait_list))
   {
     struct thread *t = list_entry(e, struct thread, elem);
+    printf("(%d, %d) ", t->tid, t->wakeup_tick);
+
     if (t->wakeup_tick >= timer_ticks())
     { // wake up
       e = list_remove(&t->elem);
@@ -666,8 +670,9 @@ check_wakeup_threads (void)
   // update min_wait_tick
   if (temp_min < min_wait_tick)
     min_wait_tick = temp_min;
-    
+
   intr_set_level(old_level);
+  printf("\n");
 }
 
 void
@@ -688,6 +693,7 @@ thread_sleep(int limit_tick)
   // update min_wait_tick
   if (limit_tick < min_wait_tick)
     min_wait_tick = limit_tick;
+
 
   debug_wait_list();
   intr_set_level(old_level);
