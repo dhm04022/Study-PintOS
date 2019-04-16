@@ -647,10 +647,11 @@ check_wakeup_threads (void)
   while (e != list_end(&wait_list))
   {
     struct thread *t = list_entry(e, struct thread, elem);
-    printf("(%d, %d) ", t->tid, t->wakeup_tick);
+    printf(" (%d, %d)", t->tid, t->wakeup_tick);
 
     if (t->wakeup_tick <= timer_ticks())
     { // wake up
+      printf("killed!");
       e = list_remove(&t->elem);
       thread_unblock(t);
       continue;
@@ -665,7 +666,7 @@ check_wakeup_threads (void)
   }
 
   printf("\n");
-  debug_wait_list();
+  //debug_wait_list();
 }
 
 void
@@ -673,16 +674,15 @@ thread_sleep(int limit_tick)
 {
   struct thread *t;
   enum intr_level old_level;
-  printf("thread_sleep in:\n");
+  
+  // init set
   old_level = intr_disable();
-
   t = thread_current();
   ASSERT(t != idle_thread);
 
   // push in wait_list
   thread_set_wakeup_tick(limit_tick); 
   list_push_back(&wait_list, &t->elem);
-  printf("push back done!\n");
 
   // update min_wait_tick
   if (limit_tick < min_wait_tick)
@@ -690,10 +690,9 @@ thread_sleep(int limit_tick)
 
   // block
   thread_block();
-  printf("push back done!\n");
-  
+
+  // reset
   intr_set_level(old_level);
-  printf("thread_sleep out: min_wait_tick: %d\n", min_wait_tick);
 }
 
 
