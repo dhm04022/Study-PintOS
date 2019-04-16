@@ -639,12 +639,9 @@ thread_sleep(int limit_tick) {
   enum intr_level old_level;
   struct thread *t = thread_current ();
 
-  
-
+  old_level = intr_disable ();
   thread_set_wakeup_tick(limit_tick);
   thread_block();
-
-  old_level = intr_disable ();
   list_remove(&t->elem);
   list_push_back (&wait_list, &t->elem);
   intr_set_level (old_level);
