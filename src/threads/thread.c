@@ -80,6 +80,7 @@ void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
 /* === CUSTOM === */
+void debug_wait_list (void);
 void check_wakeup_threads (void);
 
 /* Initializes the threading system by transforming the code
@@ -648,7 +649,7 @@ check_wakeup_threads (void)
     struct thread *t = list_entry(e, struct thread, elem);
     printf("(%d, %d) ", t->tid, t->wakeup_tick);
 
-    if (t->wakeup_tick >= timer_ticks())
+    if (t->wakeup_tick <= timer_ticks())
     { // wake up
       e = list_remove(&t->elem);
       thread_unblock(t);
@@ -664,6 +665,7 @@ check_wakeup_threads (void)
   }
 
   printf("\n");
+  debug_wait_list();
 }
 
 void
@@ -690,7 +692,6 @@ thread_sleep(int limit_tick)
   thread_block();
   printf("push back done!\n");
   
-  // debug_wait_list();
   intr_set_level(old_level);
   printf("thread_sleep out: min_wait_tick: %d\n", min_wait_tick);
 }
