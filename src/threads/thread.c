@@ -687,14 +687,14 @@ thread_sleep(int limit_tick)
   list_push_back(&wait_list, &t->elem);
   printf("push back done!\n");
 
-  // block
-  thread_block();
-  printf("push back done!\n");
-
   // update min_wait_tick
   if (limit_tick < min_wait_tick)
     min_wait_tick = limit_tick;
 
+  // block
+  thread_block();
+  printf("push back done!\n");
+  
   // debug_wait_list();
   intr_set_level(old_level);
   printf("thread_sleep out: min_wait_tick: %d\n", min_wait_tick);
