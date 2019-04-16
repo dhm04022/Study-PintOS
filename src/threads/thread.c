@@ -639,7 +639,7 @@ void
 check_wakeup_threads (void)
 {
   struct list_elem *e;
-  int64_t temp_min = INT64_MAX;
+  min_wait_tick = INT64_MAX;
   printf("wakeup in: ");
 
   e = list_begin(&wait_list);
@@ -652,21 +652,16 @@ check_wakeup_threads (void)
     { // wake up
       e = list_remove(&t->elem);
       thread_unblock(t);
-      min_wait_tick = INT64_MAX;
       continue;
     }
     
     // find min
-    if (t->wakeup_tick < temp_min)
-      temp_min = t->wakeup_tick;
+    if (t->wakeup_tick < min_wait_tick)
+      min_wait_tick = t->wakeup_tick;
 
     // next
     e = list_next(e);
   }
-
-  // update min_wait_tick
-  if (temp_min < min_wait_tick)
-    min_wait_tick = temp_min;
 
   printf("\n");
 }
