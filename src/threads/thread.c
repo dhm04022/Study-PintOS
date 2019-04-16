@@ -1,4 +1,5 @@
 #include "threads/thread.h"
+#include <inttypes.h>
 #include <debug.h>
 #include <stddef.h>
 #include <random.h>
@@ -618,6 +619,22 @@ allocate_tid (void)
 }
 
 /* === CUSTOM === */
+void
+debug_wait_list (void)
+{
+  struct list_elem *e;
+
+  printf("list (secs: %"PRId64"): ", timer_ticks());
+  for (e = list_begin (&wait_list); e != list_end (&wait_list);
+       e = list_next (e))
+    {
+      struct thread *t = list_entry (e, struct thread, elem);
+      printf("(%d, %"PRId64") ", t->tid, t->wakeup_tick);
+    }
+  
+  printf("\n");
+}
+
 void 
 check_wakeup_threads (void)
 {
@@ -627,7 +644,7 @@ check_wakeup_threads (void)
        e = list_next (e))
     {
       struct thread *t = list_entry (e, struct thread, elem);
-      if (t->wakeup_tick <= timer_ticks())
+      if (t->wakeup_tick >= timer_ticks())
         { // wake up
           printf("wakup tid %d: \n", t->tid);
           list_remove(&t->elem);
@@ -635,6 +652,8 @@ check_wakeup_threads (void)
           t->wakeup_tick = 0;
         }
     }
+
+    debug_wait_list();
 }
 
 void
@@ -650,6 +669,7 @@ thread_sleep(int limit_tick) {
   thread_block();
   intr_set_level (old_level);
   printf("sleep: tid %d:\n", t->tid);
+  debug_wait_list ();
 }
 
 
