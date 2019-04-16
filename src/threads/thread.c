@@ -146,7 +146,9 @@ thread_tick (void)
   else
     kernel_ticks++;
 
-  check_wakeup_threads(); // === CUSTOM ===
+  // === CUSTOM ===
+  if (!list_empty(&wait_list))
+    check_wakeup_threads(); 
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
@@ -640,10 +642,11 @@ thread_sleep(int limit_tick) {
   struct thread *t = thread_current ();
 
   old_level = intr_disable ();
+  ASSERT(t != idle_thread);
   thread_set_wakeup_tick(limit_tick);
-  thread_block();
   list_remove(&t->elem);
   list_push_back (&wait_list, &t->elem);
+  thread_block();
   intr_set_level (old_level);
 }
 

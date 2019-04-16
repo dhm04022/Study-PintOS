@@ -92,6 +92,7 @@ timer_sleep (int64_t ticks)
   /* ==== CUSTOM ===== */
   /* For blocked mode */
   int64_t start = timer_ticks ();
+  ASSERT (intr_get_level () == INTR_ON);
   thread_sleep(ticks + start);
 
   /* ==== basic code ==== */
