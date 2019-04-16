@@ -649,10 +649,9 @@ check_wakeup_threads (void)
       struct thread *t = list_entry (e, struct thread, elem);
       if (t->wakeup_tick >= timer_ticks())
         { // wake up
-          printf("wakup tid %d: "PRId64"\n", t->tid, t->wakeup_tick);
+          printf("wakup tid %d: %"PRId64"\n", t->tid, t->wakeup_tick);
           thread_unblock(t);
           list_remove(&t->elem);
-          list_push_back (&ready_list, &t->elem);
           t->wakeup_tick = 0;
         }
     }
@@ -669,11 +668,10 @@ thread_sleep(int limit_tick) {
   old_level = intr_disable ();
   ASSERT(t != idle_thread);
   thread_set_wakeup_tick(limit_tick);
-  list_remove(&t->elem);
   list_push_back (&wait_list, &t->elem);
   thread_block();
 
-  printf("sleep: tid %d: "PRId64"\n", t->tid, t->wakeup_tick);
+  printf("sleep: tid %d: %"PRId64"\n", t->tid, t->wakeup_tick);
   debug_wait_list ();
   intr_set_level (old_level);
 }
