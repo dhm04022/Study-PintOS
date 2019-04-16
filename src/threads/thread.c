@@ -627,9 +627,9 @@ check_wakeup_threads (void)
        e = list_next (e))
     {
       struct thread *t = list_entry (e, struct thread, elem);
-      if (t->wakeup_tick >= timer_ticks())
+      if (t->wakeup_tick <= timer_ticks())
         { // wake up
-          printf("wakup tid %d: \n", t->tid, );
+          printf("wakup tid %d: \n", t->tid);
           list_remove(&t->elem);
           thread_unblock(t);
           t->wakeup_tick = 0;
@@ -649,7 +649,7 @@ thread_sleep(int limit_tick) {
   list_push_back (&wait_list, &t->elem);
   thread_block();
   intr_set_level (old_level);
-  printf("sleep: tid %d: %d\n", t->tid, );
+  printf("sleep: tid %d:\n", t->tid);
 }
 
 
