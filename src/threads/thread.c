@@ -664,10 +664,11 @@ thread_sleep(int limit_tick) {
   old_level = intr_disable ();
   ASSERT(t != idle_thread);
   thread_set_wakeup_tick(limit_tick);
-  list_remove(&t->elem);
+  //list_remove(&t->elem);
   list_push_back (&wait_list, &t->elem);
   thread_block();
   intr_set_level (old_level);
+  
   printf("sleep: tid %d:\n", t->tid);
   debug_wait_list ();
 }
