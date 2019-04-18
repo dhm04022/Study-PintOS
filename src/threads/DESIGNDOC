@@ -9,8 +9,8 @@
 your member, say 3:3:4, or 1:3:6.
 곽대훈:김경숙:김예린 = 4:3:3
 곽대훈: 4: 전반적 설계 및 개발
-김경숙: 3: `kernel/list.h` 사용 가이드
-김예린: 3: `devices/timer.h` blocking 모드 아이디어 제시
+김경숙: 3: `kernel/list.h` 사용 가이드, DESIGNDOC
+김예린: 3: `devices/timer.h` blocking 모드 아이디어 제시, DESIGNDOC
 
                                             ALARM CLOCK
                                             ===========
@@ -18,13 +18,16 @@ your member, say 3:3:4, or 1:3:6.
 >> A1: Copy here the declaration of each new or changed `struct’ or `struct' member, global or static variable, `typedef', or enumeration.
 Identify the purpose of each in 25 words or less.
 
-> (thread.h)
-int64_t wakeup_tick: thread가 block 되었을 때 깨어나야할 시간
-
-> (thread.c)
-static struct list wait_list: wait queue에 해당하는 list, block 상태의 thread를 저장
-
-int64_t min_wait_tick = INT64_MAX: block 상태의 thread 중 가장 먼저 wake 해줘야 하는 thread의 tick값 저장
+> (thread.h) : thread 구조체에 wakeup_tick 변수 추가
+  struct thread
+    {
+    ...
+      int64_t wakeup_tick: thread가 block 되었을 때 깨어나야할 시간
+    };
+  
+> (thread.c) : 전역 변수 두개 추가
+  - static struct list wait_list : wait queue에 해당하는 list, block 상태의 thread를 저장
+  - int64_t min_wait_tick = INT64_MAX : block 상태의 thread 중 가장 먼저 wake 해줘야 하는 thread의 tick값 저장
 
 ---- ALGORITHMS ----
 >> A2: Briefly describe what happens in a call to timer_sleep(), including the effects of the timer interrupt handler.
