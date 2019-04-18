@@ -34,7 +34,7 @@ Identify the purpose of each in 25 words or less.
 
 > 기존의 timer_sleep()함수는 busy waiting 방식으로 실행되어서 불필요한 시스템 자원(cpu, 전력 소모)을 낭비한다. 
   수정한 timer_sleep()은 thread가 sleep을 할 때 block 상태로 만들어 wait_list에 넣어뒀다가 
-  깰 시간이 되면 다시 ready 상태로 바꿔주어cpu 자원을 효율적으로 사용할 수 있다.
+  깰 시간이 되면 다시 ready 상태로 바꿔주어 cpu 자원을 효율적으로 사용할 수 있다.
 
 >> A3: What steps are taken to minimize the amount of time spent in the timer interrupt handler?
 
