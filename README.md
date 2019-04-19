@@ -10,3 +10,9 @@
 따라서,  CPU 자원 활용을 위해 **blocked** 모드로 개발하는 것이 목표.
 
 [-> DESIGNDOC](./src/threads/DESIGNDOC)
+
+### result
+
+요구사항 통과 
+
+![](doc/img/p1-threads-log01.png)
