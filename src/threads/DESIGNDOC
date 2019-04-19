@@ -30,12 +30,14 @@ Identify the purpose of each in 25 words or less.
     - static struct list wait_list : wait queue에 해당하는 list, block 상태의 thread를 저장
     - int64_t min_wait_tick = INT64_MAX : block 상태의 thread 중 가장 먼저 wake 해줘야 하는 thread의 tick값 저장
 
+
 ---- ALGORITHMS ----
 >> A2: Briefly describe what happens in a call to timer_sleep(), including the effects of the timer interrupt handler.
 
   > 기존의 timer_sleep()함수는 busy waiting 방식으로 실행되어서 불필요한 시스템 자원(cpu, 전력 소모)을 낭비한다. 
     수정한 timer_sleep()은 thread가 sleep을 할 때 block 상태로 만들어 wait_list에 넣어뒀다가 
     깰 시간이 되면 다시 ready 상태로 바꿔주어 cpu 자원을 효율적으로 사용할 수 있다.
+
 
 >> A3: What steps are taken to minimize the amount of time spent in the timer interrupt handler?
 
