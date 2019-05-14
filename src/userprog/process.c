@@ -132,16 +132,23 @@ start_process (void *file_name_)
 {
   struct f_token_list f_argv; //custom: argv list
   char *token, *save_ptr;     //custom: temp variables for tokenizing
+  size_t length;
   char *file_name = file_name_;
+  char *file_copy;
   struct intr_frame if_;
   bool success;
+
+  //custom: copy full command
+  length = strlen(file_name) + 1;
+  file_copy = (char*) malloc(sizeof(char) * length);
+  strlcpy (file_copy, file_name, length);
 
   //custom: initializing f_argv
   f_token_list_init(&f_argv);
 
   //custom: argument parsings
   f_argv.f_head->c_str = file_name; // dummy node must have a full command line string.
-  for (token = strtok_r (file_name, " ", &save_ptr); token != NULL;
+  for (token = strtok_r (file_copy, " ", &save_ptr); token != NULL;
       token = strtok_r (NULL, " ", &save_ptr))
   {
     f_token_list_append(&f_argv, token);
@@ -172,6 +179,7 @@ start_process (void *file_name_)
   NOT_REACHED ();
 
   //custom: free all nodes
+  free(file_copy);
   f_token_list_free_all_nodes(&f_argv);
 }
 
