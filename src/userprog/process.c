@@ -543,6 +543,9 @@ static bool
 setup_stack (void **esp, struct f_token_list *f_argv) 
 {
   struct f_token *f_temp;
+  void *ptr_temp;
+  void **ptr_argv;
+  size_t length, word_align, i;
   uint8_t *kpage;
   bool success = false;
 
@@ -557,15 +560,59 @@ setup_stack (void **esp, struct f_token_list *f_argv)
     if (success)
     {
       *esp = PHYS_BASE;
-      
+
       // custom: stacking
+      // init
+      i = f_argv->size;
+      ptr_argv = (void*) malloc(sizeof(void*) * f_argv->size);
+
+      // each command word
       for (f_temp = f_argv->f_head->next; f_temp != NULL; f_temp = f_temp->next)
       {
-        
+        i--;
+        *esp -= strlen(f_temp->c_str);
+        ptr_argv[i] = *esp;
+        memcpy(*esp, f_temp->c_str, strlen(f_temp->c_str));
       }
+
+      // align 4 bytes
+      length = strlen(f_argv->f_head->c_str);
+      word_align = (4 - (length % 4)) % 4; 
+      *esp -= word_align;
+      memset(*esp, 0, word_align);
+
+      // 0 (sentinel)
+      length = 4;
+      *esp -= length;
+      memset(*esp, 0, length);
+
+      // setting argv pointer
+      for (i = f_argv->size - 1; i >= 0; i--)
+      {
+        *esp -= length;
+        memcpy(*esp, ptr_argv[i], length);
+      }
+
+      // argv
+      length = sizeof(char**);
+      ptr_temp = *esp;
+      *esp -= length;
+      memcpy(*esp, ptr_temp, length);
+
+      // argc
+      length = sizeof(size_t);
+      *esp -= length;
+      memset(*esp, f_argv->size, length);
+
+      // return address
+      *esp -= 4;
+      memset(*esp, 0, 4);
 
       // debug
       hex_dump(*esp, *esp, 100, 1);
+
+      // free
+      free(ptr_argv);
     }
     else
       palloc_free_page (kpage);
