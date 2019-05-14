@@ -192,8 +192,9 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  int i = 0;
-  for (i = 0; i < 100000; i++); // busyyyyyy
+  while (true) {
+    thread_yield();
+  }
   return -1;
 }
 
