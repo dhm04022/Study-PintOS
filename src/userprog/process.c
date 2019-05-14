@@ -17,9 +17,91 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "threads/malloc.h" //custom include: for dynamic allocation
+
+// CUSTOM: f_token list //////////////////////////////////////////////////////////////
+struct f_token { //custom: to save parsed argument each
+  char *c_str;
+  struct f_token *next;
+};
+
+struct f_token_list { //custom: to save parsed argument each
+  int size;
+  struct f_token *f_head;
+  struct f_token *f_tail;
+};
+
+/* custom: create node */
+struct f_token *
+f_token_create(char *c_str)
+{
+  struct f_token *f_temp;
+  f_temp = (struct f_token *) malloc(sizeof(struct f_token));
+  f_temp->c_str = c_str;
+  f_temp->next = NULL;
+  return f_temp;
+}
+
+/* custom: Free list */
+void
+f_token_list_free_all_nodes(struct f_token_list *f_list)
+{
+  struct f_token *f_temp;
+  ASSERT (f_list != NULL);
+  for (f_temp = f_list->f_head; f_temp != NULL;)
+  {
+    f_temp = f_temp->next;
+    free(f_list->f_head->c_str);
+    free(f_list->f_head);
+    f_list->f_head = f_temp;
+  }
+  f_list->f_head = NULL;
+  f_list->f_tail = NULL;
+}
+
+/* custom: Initializer struct f_token_list */
+void
+f_token_list_init(struct f_token_list *f_list)
+{  
+  ASSERT (f_list != NULL);
+  f_list->size = 0;
+  f_list->f_head = f_token_create(NULL); // dummny node
+  f_list->f_tail = f_list->f_head;
+}
+
+/* custom: Append a string element to strct f_token_list */
+void
+f_token_list_append(struct f_token_list *f_list, char *c_str)
+{
+  struct f_token *f_temp;
+  ASSERT (f_list != NULL);
+  f_list->size++;
+  f_temp = f_token_create(c_str);
+  if (f_list->f_head->next == NULL)
+    f_list->f_tail = f_temp;
+  f_temp->next = f_list->f_head->next;
+  f_list->f_head->next = f_temp;
+}
+
+/* custom: Print debug */
+void
+f_token_list_debug(struct f_token_list *f_list)
+{
+  struct f_token *f_temp;
+  if (f_list != NULL) {
+    printf("f_token_list_debug(): start!\n");
+    for (f_temp = f_list->f_head; f_temp != NULL; f_temp = f_temp->next) {
+      printf("debug: %s\n", f_temp->c_str);
+    }
+  }
+  else {
+    printf("f_token_list_debug(): error: f_list == NULL\n");
+  }
+}
+////////////////////////////////////////////////////////////////////////////////////////////
 
 static thread_func start_process NO_RETURN;
-static bool load (const char *cmdline, void (**eip) (void), void **esp);
+static bool load (const char *cmdline, void (**eip) (void), void **esp, struct f_token_list *f_argv);
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -50,16 +132,36 @@ process_execute (const char *file_name)
 static void
 start_process (void *file_name_)
 {
+  struct f_token_list f_argv; //custom: argv list
+  char *token, *save_ptr;     //custom: temp variables for tokenizing
+  size_t length;
   char *file_name = file_name_;
+  char *file_copy;
   struct intr_frame if_;
   bool success;
+
+  //custom: copy full command
+  length = strlen(file_name) + 1;
+  file_copy = (char*) malloc(sizeof(char) * length);
+  strlcpy (file_copy, file_name, length);
+
+  //custom: initializing f_argv
+  f_token_list_init(&f_argv);
+
+  //custom: argument parsings
+  f_argv.f_head->c_str = file_name; // dummy node must have a full command line string.
+  for (token = strtok_r (file_copy, " ", &save_ptr); token != NULL;
+      token = strtok_r (NULL, " ", &save_ptr))
+  {
+    f_token_list_append(&f_argv, token);
+  }
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  success = load (file_name, &if_.eip, &if_.esp);
+  success = load (f_argv.f_tail->c_str, &if_.eip, &if_.esp, &f_argv);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
@@ -74,6 +176,10 @@ start_process (void *file_name_)
      and jump to it. */
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
+
+  //custom: free all nodes
+  free(file_copy);
+  f_token_list_free_all_nodes(&f_argv);
 }
 
 /* Waits for thread TID to die and returns its exit status.  If
@@ -88,6 +194,12 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  int i;
+  for (i = 0; i < 1000; i++)
+	thread_yield();
+  // while (true) {
+  //   thread_yield();
+  // }
   return -1;
 }
 
@@ -195,7 +307,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp);
+static bool setup_stack (void **esp, struct f_token_list *f_argv);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -206,7 +318,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
    and its initial stack pointer into *ESP.
    Returns true if successful, false otherwise. */
 bool
-load (const char *file_name, void (**eip) (void), void **esp) 
+load (const char *file_name, void (**eip) (void), void **esp, struct f_token_list *f_argv) 
 {
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
@@ -302,7 +414,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (esp))
+  if (!setup_stack (esp, f_argv))
     goto done;
 
   /* Start address. */
@@ -427,20 +539,80 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp) 
+setup_stack (void **esp, struct f_token_list *f_argv) 
 {
+  struct f_token *f_temp;
+  char **ptr_argv;
+  int i;
+  size_t length, word_align;
+  size_t total_len = 0;
   uint8_t *kpage;
   bool success = false;
 
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
+  {
+    success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
+    if (success)
     {
-      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
-      if (success)
-        *esp = PHYS_BASE;
-      else
-        palloc_free_page (kpage);
+      *esp = PHYS_BASE;
+
+      // custom: stacking
+      // init
+      i = f_argv->size;
+      ptr_argv = (void*) malloc(sizeof(void*) * f_argv->size);
+
+      // each command word
+      for (f_temp = f_argv->f_head->next; f_temp != NULL; f_temp = f_temp->next)
+      {
+        i--;
+	length = strlen(f_temp->c_str) + 1;
+        *esp -= length;
+	total_len += length;
+        ptr_argv[i] = *esp;
+        memcpy(*esp, f_temp->c_str, length);
+      }
+
+      // align 4 bytes
+      word_align = (4 - (total_len % 4)) % 4; 
+      *esp -= word_align;
+      memset(*esp, 0, word_align);
+
+      // 0 (sentinel)
+      length = 4;
+      *esp -= length;
+      memset(*esp, 0, length);
+
+      // setting argv pointer
+      for (i = f_argv->size - 1; i >= 0; i--)
+      {
+        *esp -= length;
+	**(int**)esp = ptr_argv[i];
+      }
+
+      // argv
+      length = sizeof(char**);
+      *esp -= length;
+      **(int**)esp = *esp + 4;
+
+      // argc
+      length = sizeof(int);
+      *esp -= length;
+      **(int**)esp = f_argv->size;
+
+      // return address
+      *esp -= 4;
+      memset(*esp, 0, 4);
+
+      // debug
+      // hex_dump(*esp, *esp, 100, 1);
+
+      // free
+      free(ptr_argv);
     }
+    else
+      palloc_free_page (kpage);
+  }
   return success;
 }
 
