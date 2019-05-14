@@ -77,8 +77,8 @@ f_token_list_append(struct f_token_list *f_list, char *c_str)
   ASSERT (f_list != NULL);
   f_list->size++;
   f_temp = f_token_create(c_str);
-  f_list->f_tail->next = f_temp;
-  f_list->f_tail = f_temp;
+  f_temp->next = f_list->f_head->next;
+  f_list->f_head->next = f_temp;
 }
 
 /* custom: Print debug */
@@ -159,7 +159,7 @@ start_process (void *file_name_)
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  success = load (f_argv.f_head->next->c_str, &if_.eip, &if_.esp, &f_argv);
+  success = load (f_argv.f_tail->c_str, &if_.eip, &if_.esp, &f_argv);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
@@ -540,6 +540,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (void **esp, struct f_token_list *f_argv) 
 {
+  struct f_token *f_temp;
   uint8_t *kpage;
   bool success = false;
 
@@ -549,13 +550,24 @@ setup_stack (void **esp, struct f_token_list *f_argv)
 
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
+  {
+    success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
+    if (success)
     {
-      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
-      if (success)
-        *esp = PHYS_BASE;
-      else
-        palloc_free_page (kpage);
+      *esp = PHYS_BASE;
+      
+      // custom: stacking
+      for (f_temp = f_argv->f_head->next; f_temp != NULL; f_temp = f_temp->next)
+      {
+        
+      }
+
+      // debug
+      hex_dump(*esp, *esp, 100, 1);
     }
+    else
+      palloc_free_page (kpage);
+  }
   return success;
 }
 
