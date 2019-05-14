@@ -77,6 +77,8 @@ f_token_list_append(struct f_token_list *f_list, char *c_str)
   ASSERT (f_list != NULL);
   f_list->size++;
   f_temp = f_token_create(c_str);
+  if (f_list->f_head->next == NULL)
+    f_list->f_tail = f_temp;
   f_temp->next = f_list->f_head->next;
   f_list->f_head->next = f_temp;
 }
