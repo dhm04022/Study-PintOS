@@ -192,6 +192,8 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  int i = 0;
+  for (i = 0; i < 100000; i++); // busyyyyyy
   return -1;
 }
 
@@ -538,7 +540,7 @@ setup_stack (void **esp, struct f_token_list *f_argv)
 
   //custom: debuggin
   printf("setup_stack():\n");
-  f_token_list_debug(&f_argv);
+  f_token_list_debug(f_argv);
 
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
