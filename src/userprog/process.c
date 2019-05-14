@@ -17,6 +17,84 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "threads/malloc.h" //custom include: for dynamic allocation
+
+// CUSTOM: f_token list //////////////////////////////////////////////////////////////
+struct f_token { //custom: to save parsed argument each
+  char *c_str;
+  struct f_token *next;
+};
+
+struct f_token_list { //custom: to save parsed argument each
+  size_t size;
+  struct f_token *f_head;
+  struct f_token *f_tail;
+};
+
+/* custom: create node */
+struct f_token *
+f_token_create(char *c_str)
+{
+  struct f_token *f_temp;
+  f_temp = (struct f_token *) malloc(sizeof(struct f_token));
+  f_temp->c_str = c_str;
+  f_temp->next = NULL;
+  return f_temp;
+}
+
+/* custom: Free list */
+void
+f_token_list_free_all_nodes(struct f_token_list *f_list)
+{
+  struct f_token *f_temp;
+  ASSERT (f_list != NULL);
+  for (f_temp = f_list->f_head; f_temp != NULL;)
+  {
+    f_temp = f_temp->next;
+    free(f_list->f_head->c_str);
+    free(f_list->f_head);
+    f_list->f_head = f_temp;
+  }
+}
+
+/* custom: Initializer struct f_token_list */
+void
+f_token_list_init(struct f_token_list *f_list)
+{  
+  ASSERT (f_list != NULL);
+  f_list->size = 0;
+  f_list->f_head = f_token_create(NULL); // dummny node
+  f_list->f_tail = f_list->f_head;
+}
+
+/* custom: Append a string element to strct f_token_list */
+void
+f_token_list_append(struct f_token_list *f_list, char *c_str)
+{
+  struct f_token *f_temp;
+  ASSERT (f_list != NULL);
+  f_list->size++;
+  f_temp = f_token_create(c_str);
+  f_list->f_tail->next = f_temp;
+  f_list->f_tail = f_temp;
+}
+
+/* custom: Print debug */
+void
+f_token_list_debug(struct f_token_list *f_list)
+{
+  struct f_token *f_temp;
+  if (f_list != NULL) {
+    printf("f_token_list_debug(): start!\n");
+    for (f_temp = f_list->f_head; f_temp != NULL; f_temp = f_temp->next) {
+      printf("debug: %s\n", f_temp->c_str);
+    }
+  }
+  else {
+    printf("f_token_list_debug(): error: f_list == NULL\n");
+  }
+}
+////////////////////////////////////////////////////////////////////////////////////////////
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
