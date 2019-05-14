@@ -55,6 +55,8 @@ f_token_list_free_all_nodes(struct f_token_list *f_list)
     free(f_list->f_head);
     f_list->f_head = f_temp;
   }
+  f_list->f_head = NULL;
+  f_list->f_tail = NULL;
 }
 
 /* custom: Initializer struct f_token_list */
@@ -128,9 +130,25 @@ process_execute (const char *file_name)
 static void
 start_process (void *file_name_)
 {
+  struct f_token_list f_argv; //custom: argv list
+  char *token, *save_ptr;     //custom: temp variables for tokenizing
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
+
+  //custom: initializing f_argv
+  f_token_list_init(&f_argv);
+
+  //custom: argument parsings
+  f_argv.f_head->c_str = file_name; // dummy node must have a full command line string.
+  for (token = strtok_r (file_name, " ", &save_ptr); token != NULL;
+      token = strtok_r (NULL, " ", &save_ptr))
+  {
+    f_token_list_append(&f_argv, token);
+  }
+
+  //custom: debuggin
+  f_token_list_debug(&f_argv);
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
@@ -152,6 +170,9 @@ start_process (void *file_name_)
      and jump to it. */
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
+
+  //custom: free all nodes
+  f_token_list_free_all_nodes(&f_argv);
 }
 
 /* Waits for thread TID to die and returns its exit status.  If
