@@ -26,7 +26,7 @@ struct f_token { //custom: to save parsed argument each
 };
 
 struct f_token_list { //custom: to save parsed argument each
-  size_t size;
+  int size;
   struct f_token *f_head;
   struct f_token *f_tail;
 };
@@ -194,9 +194,12 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  while (true) {
-    thread_yield();
-  }
+  int i;
+  for (i = 0; i < 1000; i++)
+	thread_yield();
+  // while (true) {
+  //   thread_yield();
+  // }
   return -1;
 }
 
@@ -323,10 +326,6 @@ load (const char *file_name, void (**eip) (void), void **esp, struct f_token_lis
   off_t file_ofs;
   bool success = false;
   int i;
-
-  //custom: debuggin
-  printf("load():\n");
-  f_token_list_debug(f_argv);
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
@@ -543,15 +542,12 @@ static bool
 setup_stack (void **esp, struct f_token_list *f_argv) 
 {
   struct f_token *f_temp;
-  void *ptr_temp;
-  void **ptr_argv;
-  size_t length, word_align, i;
+  char **ptr_argv;
+  int i;
+  size_t length, word_align;
+  size_t total_len = 0;
   uint8_t *kpage;
   bool success = false;
-
-  //custom: debuggin
-  printf("setup_stack():\n");
-  f_token_list_debug(f_argv);
 
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
@@ -570,14 +566,15 @@ setup_stack (void **esp, struct f_token_list *f_argv)
       for (f_temp = f_argv->f_head->next; f_temp != NULL; f_temp = f_temp->next)
       {
         i--;
-        *esp -= strlen(f_temp->c_str);
+	length = strlen(f_temp->c_str) + 1;
+        *esp -= length;
+	total_len += length;
         ptr_argv[i] = *esp;
-        memcpy(*esp, f_temp->c_str, strlen(f_temp->c_str));
+        memcpy(*esp, f_temp->c_str, length);
       }
 
       // align 4 bytes
-      length = strlen(f_argv->f_head->c_str);
-      word_align = (4 - (length % 4)) % 4; 
+      word_align = (4 - (total_len % 4)) % 4; 
       *esp -= word_align;
       memset(*esp, 0, word_align);
 
@@ -590,26 +587,25 @@ setup_stack (void **esp, struct f_token_list *f_argv)
       for (i = f_argv->size - 1; i >= 0; i--)
       {
         *esp -= length;
-        memcpy(*esp, ptr_argv[i], length);
+	**(int**)esp = ptr_argv[i];
       }
 
       // argv
       length = sizeof(char**);
-      ptr_temp = *esp;
       *esp -= length;
-      memcpy(*esp, ptr_temp, length);
+      **(int**)esp = *esp + 4;
 
       // argc
-      length = sizeof(size_t);
+      length = sizeof(int);
       *esp -= length;
-      memset(*esp, f_argv->size, length);
+      **(int**)esp = f_argv->size;
 
       // return address
       *esp -= 4;
       memset(*esp, 0, 4);
 
       // debug
-      hex_dump(*esp, *esp, 100, 1);
+      // hex_dump(*esp, *esp, 100, 1);
 
       // free
       free(ptr_argv);
