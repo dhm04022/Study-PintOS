@@ -30,16 +30,16 @@ syscall_handler (struct intr_frame *f UNUSED)
     halt();
     break;
   case SYS_EXIT: // 1
-    check_user_vaddr(f->esp + 24);
-    exit (*(uint32_t*)(f->esp + 24));
+    check_user_vaddr(f->esp + 8);
+    exit (*(uint32_t*)(f->esp + 8));
     break;
   case SYS_EXEC: // 2
-    check_user_vaddr(f->esp + 24); 
-    exec((const char *)*(uint32_t *)(f->esp + 24));
+    check_user_vaddr(f->esp + 8); 
+    exec((const char *)*(uint32_t *)(f->esp + 8));
     break;
   case SYS_WAIT: // 3
-    check_user_vaddr(f->esp + 24); 
-    wait((pid_t)*(uint32_t *)(f->esp + 24));
+    check_user_vaddr(f->esp + 8); 
+    wait((pid_t)*(uint32_t *)(f->esp + 8));
     break;
   case SYS_CREATE: // 4
     
@@ -93,7 +93,7 @@ void halt(void)
 
 void exit(int status)
 {
-  //printf("%s: exit(%d)\n", thread_name(), status);  //debugging
+  printf("%s: exit(%d)\n", thread_name(), status);
   thread_exit();
 }
 
