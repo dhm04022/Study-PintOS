@@ -6,6 +6,7 @@
 #include "threads/init.h"
 
 static void syscall_handler (struct intr_frame *);
+void check_user_vaddr(const void *vaddr);
 
 void
 syscall_init (void) 
@@ -28,13 +29,16 @@ syscall_handler (struct intr_frame *f UNUSED)
     halt();
     break;
   case SYS_EXIT: // 1
-    exit (*(uint32_t*)(f->esp + 24));
+    check_user_vaddr(f->esp + 8);
+    exit (*(uint32_t*)(f->esp + 8));
     break;
   case SYS_EXEC: // 2
-    
+    check_user_vaddr(f->esp + 8); 
+    exec((const char *)*(uint32_t *)(f->esp + 8));
     break;
   case SYS_WAIT: // 3
-   
+    check_user_vaddr(f->esp + 8); 
+    wait((pid_t)*(uint32_t *)(f->esp + 8));
     break;
   case SYS_CREATE: // 4
     
@@ -49,9 +53,19 @@ syscall_handler (struct intr_frame *f UNUSED)
     
     break;
   case SYS_READ: // 8
-    
+    check_user_vaddr(f->esp + 24); 
+    check_user_vaddr(f->esp + 28); 
+    check_user_vaddr(f->esp + 32); 
+    read (
+      (int)*(uint32_t *)(f->esp+24), 
+      (void *)*(uint32_t *)(f->esp + 28), 
+      (unsigned)*((uint32_t *)(f->esp + 32))
+    );
     break;              
   case SYS_WRITE: // 9
+    check_user_vaddr(f->esp + 24); 
+    check_user_vaddr(f->esp + 28); 
+    check_user_vaddr(f->esp + 32); 
     write (
       (int)*(uint32_t *)(f->esp + 24),
       (void *)*(uint32_t *)(f->esp + 28),
@@ -78,7 +92,7 @@ void halt(void)
 
 void exit(int status)
 {
-  printf("%s: exit(%d)\n", thread_name(), status);  //debugging
+  //printf("%s: exit(%d)\n", thread_name(), status);  //debugging
   thread_exit();
 }
 
@@ -112,4 +126,15 @@ int write (int fd, const void *buffer, unsigned size)
     return size;
   }
   return -1;
+}
+
+
+
+
+void check_user_vaddr(const void *vaddr) 
+{ 
+  if (!is_user_vaddr(vaddr)) 
+  { 
+    exit(-1); 
+  } 
 }
