@@ -19,24 +19,21 @@ syscall_handler (struct intr_frame *f UNUSED)
   uint32_t syscall_number = *(uint32_t*)(f->esp);
 
   // debuggin
-  printf("syscall: %d\n", syscall_handler);
-  hex_dump(f->esp, f->esp, 100, 1);
+  // printf("syscall: %d\n", syscall_number);
+  // hex_dump(f->esp, f->esp, 100, 1);
 
   // system call
   switch (syscall_number) {
   case SYS_HALT: // 0
-    printf("SYS_HALT!\n");
     break;
   case SYS_EXIT: // 1
-    printf("SYS_EXIT!\n");
-    exit ((int)(f->esp + 4));
+    exit (*(uint32_t*)(f->esp + 24));
     break;
   case SYS_WRITE: // 9
-    printf("SYS_WRITE!!\n");
     write (
-      (int)(f->esp + 4),
-      (void *)(f->esp + 8),
-      (unsigned)(f->esp + 12)
+      (int)*(uint32_t *)(f->esp + 24),
+      (void *)*(uint32_t *)(f->esp + 28),
+      (unsigned)*(uint32_t *)(f->esp + 32)
     );
     break;
   }
