@@ -110,6 +110,8 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp, struct f
 tid_t
 process_execute (const char *file_name) 
 {
+  char file_temp[256];
+  char *file_token, *save_ptr;
   char *fn_copy;
   tid_t tid;
 
@@ -120,8 +122,12 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
+  // custom: file name token
+  strlcpy (file_temp, file_name, strlen(file_name) + 1);
+  file_token = strtok_r(file_temp, " ", &save_ptr);
+
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (file_token, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
