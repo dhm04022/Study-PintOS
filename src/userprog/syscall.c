@@ -25,10 +25,32 @@ syscall_handler (struct intr_frame *f UNUSED)
   // system call
   switch (syscall_number) {
   case SYS_HALT: // 0
+    halt();
     break;
   case SYS_EXIT: // 1
     exit (*(uint32_t*)(f->esp + 24));
     break;
+  case SYS_EXEC: // 2
+    
+    break;
+  case SYS_WAIT: // 3
+   
+    break;
+  case SYS_CREATE: // 4
+    
+    break;
+  case SYS_REMOVE: // 5
+    
+    break;
+  case SYS_OPEN: // 6
+    
+    break;
+  case SYS_FILESIZE: // 7
+    
+    break;
+  case SYS_READ: // 8
+    
+    break;              
   case SYS_WRITE: // 9
     write (
       (int)*(uint32_t *)(f->esp + 24),
@@ -36,19 +58,52 @@ syscall_handler (struct intr_frame *f UNUSED)
       (unsigned)*(uint32_t *)(f->esp + 32)
     );
     break;
+  case SYS_SEEK: // 10
+    
+    break;        
+  case SYS_TELL: // 11
+    
+    break;           
+  case SYS_CLOSE: // 12
+    
+    break;          
   }
 }
 
 
 void halt(void)
 {
+  shutdown_power_off();
 }
 
 void exit(int status)
 {
-  printf("%s: exit(%d)\n", thread_name(), status);
+  printf("%s: exit(%d)\n", thread_name(), status);  //debugging
   thread_exit();
 }
+
+pid_t exec (const char *cmd_line) 
+{ 
+  return process_execute(cmd_line); 
+} 
+
+int wait (pid_t pid) 
+{ 
+  return process_wait(pid); 
+} 
+
+int read (int fd, void* buffer, unsigned size) 
+{ 
+  int i; 
+  if (fd == 0) { 
+      for (i = 0; i < size; i ++) 
+      { 
+        if (((char *)buffer)[i] == '\0') 
+          { break; } 
+      } 
+  } 
+  return i; 
+} 
 
 int write (int fd, const void *buffer, unsigned size)
 {
