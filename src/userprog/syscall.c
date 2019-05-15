@@ -4,6 +4,7 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/init.h"
+#include "threads/vaddr.h"
 
 static void syscall_handler (struct intr_frame *);
 void check_user_vaddr(const void *vaddr);
