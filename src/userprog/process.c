@@ -566,9 +566,9 @@ setup_stack (void **esp, struct f_token_list *f_argv)
       for (f_temp = f_argv->f_head->next; f_temp != NULL; f_temp = f_temp->next)
       {
         i--;
-	length = strlen(f_temp->c_str) + 1;
+	      length = strlen(f_temp->c_str) + 1;
         *esp -= length;
-	total_len += length;
+      	total_len += length;
         ptr_argv[i] = *esp;
         memcpy(*esp, f_temp->c_str, length);
       }
@@ -587,7 +587,7 @@ setup_stack (void **esp, struct f_token_list *f_argv)
       for (i = f_argv->size - 1; i >= 0; i--)
       {
         *esp -= length;
-	**(int**)esp = ptr_argv[i];
+      	**(int**)esp = ptr_argv[i];
       }
 
       // argv
