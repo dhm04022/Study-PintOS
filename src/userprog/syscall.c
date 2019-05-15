@@ -16,7 +16,7 @@ syscall_init (void)
 }
 
 static void
-syscall_handler (struct intr_frame *f UNUSED) 
+syscall_handler (struct intr_frame *f) 
 {
   uint32_t syscall_number = *(uint32_t*)(f->esp);
 
@@ -35,11 +35,11 @@ syscall_handler (struct intr_frame *f UNUSED)
     break;
   case SYS_EXEC: // 2
     check_user_vaddr(f->esp + 8); 
-    exec((const char *)*(uint32_t *)(f->esp + 8));
+    f->eax = exec((const char *)*(uint32_t *)(f->esp + 8));
     break;
   case SYS_WAIT: // 3
     check_user_vaddr(f->esp + 8); 
-    wait((pid_t)*(uint32_t *)(f->esp + 8));
+    f-> eax = wait((pid_t)*(uint32_t *)(f->esp + 8));
     break;
   case SYS_CREATE: // 4
     
@@ -57,7 +57,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     check_user_vaddr(f->esp + 24); 
     check_user_vaddr(f->esp + 28); 
     check_user_vaddr(f->esp + 32); 
-    read (
+    f-> eax = read (
       (int)*(uint32_t *)(f->esp+24), 
       (void *)*(uint32_t *)(f->esp + 28), 
       (unsigned)*((uint32_t *)(f->esp + 32))
@@ -67,10 +67,10 @@ syscall_handler (struct intr_frame *f UNUSED)
     check_user_vaddr(f->esp + 24); 
     check_user_vaddr(f->esp + 28); 
     check_user_vaddr(f->esp + 32); 
-    write (
-      (int)*(uint32_t *)(f->esp + 24),
-      (void *)*(uint32_t *)(f->esp + 28),
-      (unsigned)*(uint32_t *)(f->esp + 32)
+    f->eax = write(
+      (int)*(uint32_t *)(f->esp+24), 
+      (void *)*(uint32_t *)(f->esp + 28), 
+      (unsigned)*((uint32_t *)(f->esp + 32))
     );
     break;
   case SYS_SEEK: // 10
@@ -94,6 +94,7 @@ void halt(void)
 void exit(int status)
 {
   printf("%s: exit(%d)\n", thread_name(), status);
+  thread_current() -> exit_status = status;
   thread_exit();
 }
 

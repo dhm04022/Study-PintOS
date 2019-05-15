@@ -126,10 +126,16 @@ process_execute (const char *file_name)
   strlcpy (file_temp, file_name, strlen(file_name) + 1);
   file_token = strtok_r(file_temp, " ", &save_ptr);
 
+  if (filesys_open(cmd_name) == NULL) 
+  { 
+    return -1; 
+  }
+
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_token, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
+
   return tid;
 }
 
@@ -198,15 +204,26 @@ start_process (void *file_name_)
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
 int
-process_wait (tid_t child_tid UNUSED) 
+process_wait (tid_t child_tid) 
 {
-  int i;
-  for (i = 0; i < 1000; i++)
-	thread_yield();
-  // while (true) {
-  //   thread_yield();
-  // }
-  return -1;
+  struct list_elem* e; 
+  struct thread* t = NULL; 
+  int exit_status; 
+  
+  for (e = list_begin(&(thread_current()->child)); e != list_end(&(thread_current()->child)); e = list_next(e)) 
+  { 
+    t = list_entry(e, struct thread, child_elem); 
+    if (child_tid == t->tid) 
+    { 
+      sema_down(&(t->child_lock)); 
+      exit_status = t->exit_status; 
+      list_remove(&(t->child_elem)); 
+      sema_up(&(t->mem_lock));        /* new */
+
+      return exit_status; 
+    } 
+  } 
+  return -1; 
 }
 
 /* Free the current process's resources. */
@@ -232,6 +249,8 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+    sema_up(&(cur->child_lock));
+    sema_down(&(cur->mem_lock));        /* new */
 }
 
 /* Sets up the CPU for running user code in the current
