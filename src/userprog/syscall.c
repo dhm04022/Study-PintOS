@@ -235,6 +235,7 @@ int write (int fd, const void *buffer, unsigned size)
   check_user_vaddr(buffer);
   if (fd == 1) 
   { 
+    putbuf(buffer, size); 
     return size; 
   } 
   else if (fd > 2) 
