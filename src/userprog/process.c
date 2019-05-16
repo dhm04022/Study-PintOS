@@ -126,7 +126,7 @@ process_execute (const char *file_name)
   strlcpy (file_temp, file_name, strlen(file_name) + 1);
   file_token = strtok_r(file_temp, " ", &save_ptr);
 
-  if (filesys_open(cmd_name) == NULL) 
+  if (filesys_open(file_token) == NULL) 
   { 
     return -1; 
   }
