@@ -99,10 +99,11 @@ struct thread
     uint32_t *pagedir;                  /* Page directory. */
     struct semaphore child_lock; 
     struct semaphore mem_lock;          /* new */
+    struct semaphore load_lock; /* new */
     struct list child; 
     struct list_elem child_elem; 
     int exit_status;
-    struct file* fd[128];               /* new */
+    struct file* fd[200];               /* new */
 #endif
 
     /* Owned by thread.c. */
