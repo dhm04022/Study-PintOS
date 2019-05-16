@@ -271,7 +271,7 @@ unsigned tell (int fd)
   return file_tell(thread_current()->fd[fd]); 
 } 
 
-unsigned close (int fd) 
+void close (int fd) 
 { 
   struct file* fp;
   if (thread_current()->fd[fd] == NULL) 
