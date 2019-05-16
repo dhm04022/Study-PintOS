@@ -184,10 +184,6 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (f_argv.f_tail->c_str, &if_.eip, &if_.esp, &f_argv);
-  if (success) 
-  { 
-    construct_esp(file_name, &if_.esp); 
-  }
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
