@@ -113,8 +113,6 @@ process_execute (const char *file_name)
   char file_temp[256];
   char *file_token, *save_ptr;
   char *fn_copy;
-  struct list_elem* e; 
-  struct thread* t;
   tid_t tid;
 
   /* Make a copy of FILE_NAME.
@@ -135,17 +133,8 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_token, PRI_DEFAULT, start_process, fn_copy);
-  sema_down(&thread_current()->load_lock);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
-  for (e = list_begin(&thread_current()->child); e != list_end(&thread_current()->child); e = list_next(e)) 
-  { 
-    t = list_entry(e, struct thread, child_elem); 
-    if (t->exit_status == -1) 
-    { 
-      return process_wait(tid); 
-    } 
-  }
   return tid;
 }
 
@@ -187,9 +176,8 @@ start_process (void *file_name_)
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
-  sema_up(&thread_current()->parent->load_lock);
   if (!success) 
-    exit(-1);
+    thread_exit();
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
