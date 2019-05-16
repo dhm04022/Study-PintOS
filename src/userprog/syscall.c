@@ -284,7 +284,6 @@ void close (int fd)
   return file_close(thread_current()->fd[fd]); 
 }
 
-
 void check_user_vaddr(const void *vaddr) 
 { 
   if (!is_user_vaddr(vaddr)) 
