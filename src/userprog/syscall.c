@@ -1,10 +1,16 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
+#include <string.h>
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/init.h"
 #include "threads/vaddr.h"
+#include "lib/user/syscall.h"
+#include "filesys/file.h"
+#include "filesys/filesys.h"
+#include "userprog/process.h"
+#include "devices/shutdown.h"
 
 static void syscall_handler (struct intr_frame *);
 void check_user_vaddr(const void *vaddr);
@@ -265,7 +271,7 @@ unsigned tell (int fd)
   return file_tell(thread_current()->fd[fd]); 
 } 
 
-void close (int fd) 
+unsigned close (int fd) 
 { 
   struct file* fp;
   if (thread_current()->fd[fd] == NULL) 
