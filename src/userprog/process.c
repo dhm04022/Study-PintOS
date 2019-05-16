@@ -113,6 +113,8 @@ process_execute (const char *file_name)
   char file_temp[256];
   char *file_token, *save_ptr;
   char *fn_copy;
+  struct list_elem* e; 
+  struct thread* t;
   tid_t tid;
 
   /* Make a copy of FILE_NAME.
