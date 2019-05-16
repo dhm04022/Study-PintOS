@@ -16,6 +16,6 @@ int read (int fd, void *buffer, unsigned size);
 int write (int fd, const void *buffer, unsigned size); 
 void seek (int fd, unsigned position); 
 unsigned tell (int fd); 
-void close (int fd);
+unsigned close (int fd);
 
 #endif /* userprog/syscall.h */
